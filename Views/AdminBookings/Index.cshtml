@@ -1,0 +1,56 @@
+﻿@model IEnumerable<MovieTicketBooking.Models.Booking>
+
+@{
+    ViewData["Title"] = "Quản lý đặt vé";
+}
+
+<div class="container mt-5">
+    <h2 class="text-center text-primary mb-4">🎟 QUẢN LÝ ĐẶT VÉ</h2>
+
+    <table class="table table-bordered table-hover table-striped align-middle">
+        <thead class="table-dark text-center">
+            <tr>
+                <th>Mã đặt vé</th>
+                <th>Khách hàng</th>
+                <th>Email</th>
+                <th>Phim</th>
+                <th>Ngày đặt</th>
+                <th>Tổng tiền (VNĐ)</th>
+                <th>Trạng thái</th>
+                <th>Thanh toán</th>
+                <th>Hành động</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var item in Model)
+            {
+                <tr>
+                    <td>@item.BookingCode</td>
+                    <td>@item.CustomerName</td>
+                    <td>@item.CustomerEmail</td>
+                    <td>@item.Showtime?.Movie?.Title</td>
+                    <td>@item.BookingDate.ToString("dd/MM/yyyy HH:mm")</td>
+                    <td class="text-end">@item.TotalAmount.ToString("N0")</td>
+                    <td>@item.Status</td>
+                    <td>@item.PaymentStatus</td>
+                    <td class="text-center">
+                        <a asp-action="Details" asp-route-id="@item.Id" class="btn btn-sm btn-info">
+                            <i class="fa fa-eye"></i> Xem
+                        </a>
+                        <form asp-action="Delete" asp-route-id="@item.Id" method="post" class="d-inline">
+                            <button type="submit" class="btn btn-sm btn-danger" onclick="return confirm('Xác nhận xoá đặt vé này?')">
+                                <i class="fa fa-trash"></i> Xoá
+                            </button>
+                        </form>
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
+
+    <div class="text-center mt-4">
+        <a asp-controller="Admin" asp-action="Dashboard" class="btn btn-secondary">
+            ⬅ Quay lại Dashboard
+        </a>
+    </div>
+</div>

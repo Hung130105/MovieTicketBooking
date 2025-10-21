@@ -1,0 +1,147 @@
+﻿@model MovieTicketBooking.Models.Movie
+@using MovieTicketBooking.Models
+@using Microsoft.AspNetCore.Http
+@inject IHttpContextAccessor HttpContextAccessor
+
+@{
+    ViewData["Title"] = Model.Title;
+    var isLoggedIn = !string.IsNullOrEmpty(HttpContextAccessor.HttpContext.Session.GetString("UserId"));
+    var showtimes = ViewBag.Showtimes as List<Showtime>;
+    var availableDates = ViewBag.AvailableDates as List<DateTime>;
+}
+
+<div class="container mt-4">
+    <div class="row">
+        <div class="col-md-4">
+            <img src="/images/@Model.PosterUrl" class="img-fluid rounded shadow-sm" alt="@Model.Title">
+        </div>
+
+        <div class="col-md-8">
+            <h1 class="fw-bold">@Model.Title</h1>
+
+            <!-- Nút trailer + đặt vé nhanh -->
+            <div class="mb-3">
+                @if (!string.IsNullOrEmpty(Model.TrailerUrl))
+                {
+                    <a href="@Model.TrailerUrl" target="_blank" class="btn btn-outline-danger me-2">
+                        🎬 Xem Trailer
+                    </a>
+                }
+                @if (isLoggedIn && showtimes != null && showtimes.Any())
+                {
+                    var firstShow = showtimes.OrderBy(s => s.StartTime).First();
+                    <a asp-controller="Bookings" asp-action="Create" asp-route-showtimeId="@firstShow.Id"
+                       class="btn btn-success">
+                        🎟️ Đặt vé nhanh
+                    </a>
+                }
+            </div>
+
+            <!-- Nội dung phim -->
+            <div class="mb-4">
+                <h5>Nội dung chính</h5>
+                <p class="lead">@Model.Description</p>
+            </div>
+
+            <!-- Thông tin phim -->
+            <div class="mb-4">
+                <h5>Thông tin phim</h5>
+                <ul class="list-unstyled">
+                    <li><strong>Đạo diễn:</strong> @Model.Director</li>
+                    <li><strong>Thể loại:</strong> @Model.Genre</li>
+                    <li><strong>Thời lượng:</strong> @Model.Duration phút</li>
+                    <li><strong>Ngôn ngữ:</strong> @Model.Language</li>
+                    <li><strong>Giá vé:</strong> @Model.Price.ToString("N0") VNĐ</li>
+                </ul>
+            </div>
+
+            <!-- Lọc ngày chiếu -->
+            <div class="mb-3">
+                <h5>Các suất chiếu</h5>
+                @if (availableDates != null && availableDates.Any())
+                {
+                    <label for="dateSelector" class="form-label fw-bold">Chọn ngày chiếu:</label>
+                    <select id="dateSelector" class="form-select w-50" onchange="filterShowtimes()">
+                        @foreach (var date in availableDates)
+                        {
+                            <option value="@date.ToString("yyyy-MM-dd")">@date.ToString("dd/MM/yyyy")</option>
+                        }
+                    </select>
+                }
+            </div>
+
+            <!-- Danh sách suất chiếu -->
+            <div id="showtimeList">
+                @if (showtimes != null && showtimes.Any())
+                {
+                    foreach (var showtime in showtimes)
+                    {
+                        <div class="card mb-3 showtime-card" data-date="@showtime.StartTime.ToString("yyyy-MM-dd")">
+                            <div class="card-body">
+                                <div class="row align-items-center">
+                                    <div class="col-md-6">
+                                        <h6 class="mb-1">@showtime.StartTime.ToString("HH:mm")</h6>
+                                        <p class="mb-1 text-success">Giá vé: @Model.Price.ToString("N0") VNĐ</p>
+                                        <small class="text-muted">Phòng: @showtime.CinemaRoom?.Name</small>
+                                    </div>
+                                    <div class="col-md-6 text-end">
+                                        @if (isLoggedIn)
+                                        {
+                                            <a asp-controller="Bookings" asp-action="Create" asp-route-showtimeId="@showtime.Id"
+                                               class="btn btn-primary btn-sm">
+                                                Chọn ghế
+                                            </a>
+                                        }
+                                        else
+                                        {
+                                            <a asp-controller="Auth" asp-action="Login"
+                                               asp-route-returnUrl="@Url.Action("Create", "Bookings", new { showtimeId = showtime.Id })"
+                                               class="btn btn-outline-primary btn-sm">
+                                                Đăng nhập để đặt vé
+                                            </a>
+                                        }
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    }
+                }
+                else
+                {
+                    <div class="alert alert-warning">
+                        Hiện không có suất chiếu nào cho phim này.
+                    </div>
+                }
+            </div>
+
+            <!-- Quay lại -->
+            <div class="mt-4">
+                <a asp-action="Index" class="btn btn-secondary">
+                    <i class="fas fa-arrow-left"></i> Trở về danh sách phim
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        function filterShowtimes() {
+            const selectedDate = document.getElementById('dateSelector').value;
+            const allCards = document.querySelectorAll('.showtime-card');
+            allCards.forEach(card => {
+                const cardDate = card.getAttribute('data-date');
+                card.style.display = (cardDate === selectedDate) ? 'block' : 'none';
+            });
+        }
+
+        // Tự động chọn ngày đầu tiên khi load
+        window.addEventListener('load', () => {
+            const firstOption = document.querySelector('#dateSelector option');
+            if (firstOption) {
+                firstOption.selected = true;
+                filterShowtimes();
+            }
+        });
+    </script>
+}

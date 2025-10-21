@@ -1,0 +1,40 @@
+﻿@{
+    ViewData["Title"] = "Bảng điều khiển quản trị";
+}
+
+<div class="container mt-5">
+    <h2 class="text-center text-primary mb-4">🎬 BẢNG ĐIỀU KHIỂN QUẢN TRỊ</h2>
+
+    <div class="row text-center">
+        <div class="col-md-4 mb-3">
+            <div class="card shadow">
+                <div class="card-body">
+                    <h5 class="card-title">🎞 Quản lý phim</h5>
+                    <a asp-controller="AdminMovies" asp-action="Index" class="btn btn-primary">Xem phim</a>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-4 mb-3">
+            <div class="card shadow">
+                <div class="card-body">
+                    <h5 class="card-title">🎟 Quản lý đặt vé</h5>
+                    <a asp-controller="AdminBookings" asp-action="Index" class="btn btn-success">Xem danh sách vé</a>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-4 mb-3">
+            <div class="card shadow">
+                <div class="card-body">
+                    <h5 class="card-title">👤 Quản lý người dùng</h5>
+                    <a asp-controller="AdminUsers" asp-action="Index" class="btn btn-outline-warning">Danh sách người dùng</a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="text-center mt-4">
+        <a asp-controller="Movies" asp-action="Index" class="btn btn-secondary">⬅ Quay lại trang chủ</a>
+    </div>
+</div>

@@ -1,0 +1,57 @@
+﻿@model IEnumerable<MovieTicketBooking.Models.Movie>
+
+@{
+    ViewData["Title"] = "Quản lý phim";
+}
+
+<div class="container mt-5">
+    <h2 class="text-center text-primary mb-4">🎬 QUẢN LÝ DANH SÁCH PHIM</h2>
+
+    <div class="text-end mb-3">
+        <a asp-action="Create" class="btn btn-success">
+            <i class="fa fa-plus"></i> Thêm phim mới
+        </a>
+    </div>
+
+    <table class="table table-striped table-bordered text-center align-middle">
+        <thead class="table-dark">
+            <tr>
+                <th>Tên phim</th>
+                <th>Thể loại</th>
+                <th>Giá vé</th>
+                <th>Ngày khởi chiếu</th>
+                <th>Trạng thái</th>
+                <th>Hành động</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var movie in Model)
+            {
+                <tr>
+                    <td>@movie.Title</td>
+                    <td>@movie.Genre</td>
+                    <td>@movie.Price.ToString("N0") VNĐ</td>
+                    <td>@movie.ReleaseDate.ToString("dd/MM/yyyy")</td>
+                    <td>@(movie.IsActive ? "Đang chiếu" : "Ngưng chiếu")</td>
+                    <td>
+                        <a asp-action="Edit" asp-route-id="@movie.Id" class="btn btn-warning btn-sm">
+                            <i class="fa fa-edit"></i> Sửa
+                        </a>
+                        <form asp-action="Delete" asp-route-id="@movie.Id" method="post" class="d-inline">
+                            <button type="submit" class="btn btn-danger btn-sm"
+                                    onclick="return confirm('Bạn có chắc muốn xoá phim này không?')">
+                                <i class="fa fa-trash"></i> Xoá
+                            </button>
+                        </form>
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
+
+    <div class="text-center mt-4">
+        <a asp-controller="Admin" asp-action="Dashboard" class="btn btn-secondary">
+            ⬅ Quay lại Dashboard
+        </a>
+    </div>
+</div>

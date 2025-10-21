@@ -1,0 +1,72 @@
+﻿@{
+    ViewData["Title"] = "Đăng ký";
+}
+
+<div class="row justify-content-center">
+    <div class="col-md-6">
+        <div class="card shadow-lg">
+            <div class="card-header bg-success text-white text-center">
+                <h4 class="mb-0"><i class="fas fa-user-plus"></i> TẠO TÀI KHOẢN MỚI</h4>
+            </div>
+
+            <div class="card-body">
+                <p class="text-center text-muted">Vui lòng điền đầy đủ thông tin bên dưới để đăng ký.</p>
+
+                @if (ViewBag.Error != null)
+                {
+                    <div class="alert alert-danger text-center">@ViewBag.Error</div>
+                }
+
+                <form method="post" asp-action="Register">
+                    <!-- Username -->
+                    <div class="mb-3">
+                        <label class="form-label">Tên đăng nhập *</label>
+                        <input type="text" class="form-control" name="username" placeholder="Nhập tên đăng nhập" required>
+                    </div>
+
+                    <!-- Password -->
+                    <div class="mb-3">
+                        <label class="form-label">Mật khẩu *</label>
+                        <input type="password" class="form-control" name="password" placeholder="Nhập mật khẩu" required minlength="6">
+                        <div class="form-text text-muted">Mật khẩu phải có ít nhất 6 ký tự.</div>
+                    </div>
+
+                    <!-- Email -->
+                    <div class="mb-3">
+                        <label class="form-label">Email *</label>
+                        <input type="email" class="form-control" name="email" placeholder="Ví dụ: tenban@gmail.com" required>
+                    </div>
+
+                    <!-- Full Name -->
+                    <div class="mb-3">
+                        <label class="form-label">Họ và tên</label>
+                        <input type="text" class="form-control" name="fullName" placeholder="Nhập họ và tên đầy đủ">
+                    </div>
+
+                    <!-- Phone Number -->
+                    <div class="mb-3">
+                        <label class="form-label">Số điện thoại *</label>
+                        <input type="tel" class="form-control" name="phoneNumber" placeholder="Nhập số điện thoại" required pattern="[0-9]{9,11}">
+                        <div class="form-text text-muted">Số điện thoại gồm 9–11 chữ số.</div>
+                    </div>
+
+                    <!-- Submit -->
+                    <div class="d-grid">
+                        <button type="submit" class="btn btn-success btn-lg">
+                            <i class="fas fa-user-plus"></i> Đăng ký ngay
+                        </button>
+                    </div>
+                </form>
+
+                <div class="text-center mt-3">
+                    <p>
+                        Đã có tài khoản?
+                        <a asp-controller="Auth" asp-action="Login" class="text-decoration-none text-primary fw-bold">
+                            Đăng nhập ngay
+                        </a>
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

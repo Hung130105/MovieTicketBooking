@@ -1,0 +1,210 @@
+﻿@model IEnumerable<MovieTicketBooking.Models.Movie>
+@{
+    ViewData["Title"] = "Danh sách phim";
+}
+
+<div class="row">
+    <div class="col-md-3">
+        <div class="card">
+            <div class="card-header bg-primary text-white">
+                <h6 class="mb-0"><i class="fas fa-tachometer-alt"></i> QUẢN LÝ CHÍNH</h6>
+            </div>
+            <div class="card-body p-0">
+                <div class="list-group list-group-flush">
+                    <a href="#" class="list-group-item list-group-item-action">
+                        <i class="fas fa-chart-bar me-2"></i>Dashboard
+                    </a>
+                    <div class="list-group-item bg-light">
+                        <small class="text-muted">DANH MỤC PHIM</small>
+                    </div>
+                    <a href="#" class="list-group-item list-group-item-action active">
+                        <i class="fas fa-video me-2"></i>Phim
+                    </a>
+                    <a href="#" class="list-group-item list-group-item-action">
+                        <i class="fas fa-theater-masks me-2"></i>Rạp
+                    </a>
+                    <a href="#" class="list-group-item list-group-item-action">
+                        <i class="fas fa-calendar-alt me-2"></i>Suất Chiếu
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-9">
+        <!-- Search Bar với autocomplete -->
+        <div class="card mb-4">
+            <div class="card-body">
+                <form id="searchForm" method="get" asp-action="Index">
+                    <div class="input-group">
+                        <input type="text" id="searchInput" class="form-control" name="searchString" 
+                               placeholder="Search for..." value="@ViewBag.CurrentFilter">
+                        <button class="btn btn-outline-primary" type="submit">
+                            <i class="fas fa-search"></i>
+                        </button>
+                    </div>
+                </form>
+                <!-- Autocomplete suggestions -->
+                <div id="autocompleteResults" class="autocomplete-results"></div>
+            </div>
+        </div>
+
+        <!-- Welcome Message -->
+        <div class="alert alert-info d-flex justify-content-between align-items-center">
+            <span>
+                @if (Context.Session.GetString("UserId") != null)
+                {
+                    <text>Xin chào <strong>@Context.Session.GetString("FullName")</strong></text>
+                }
+                else
+                {
+                    <text>Xin chào <strong>Khách</strong> - Vui lòng đăng nhập để mua vé</text>
+                }
+            </span>
+        </div>
+
+        <h4 class="mb-3">Phim Đang Chiếu</h4>
+
+        <div class="row" id="moviesContainer">
+            @foreach (var movie in Model)
+            {
+                <div class="col-md-6 mb-4">
+                    <div class="card h-100 movie-card">
+                        <img src="@Url.Content("~/images/" + movie.PosterUrl)"
+                             alt="@movie.Title"
+                             class="card-img-top rounded shadow-sm"
+                             style="height: 300px; object-fit: cover;" />
+                        <div class="card-body">
+                            <h5 class="card-title">@movie.Title</h5>
+                            <p class="card-text">
+                                <small class="text-muted">
+                                    <i class="fas fa-calendar-alt"></i>
+                                    Ngày khởi chiếu: @movie.ReleaseDate.ToString("dd/MM/yyyy")
+                                </small>
+                            </p>
+                            <p class="card-text">@movie.Description</p>
+                        </div>
+                        <div class="card-footer">
+                            <a asp-action="Details" asp-route-id="@movie.Id" class="btn btn-primary btn-sm">
+                                <i class="fas fa-info-circle"></i> Xem Chi Tiết & Mua Vé
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            }
+        </div>
+
+        @if (!Model.Any())
+        {
+            <div class="alert alert-warning text-center">
+                Không tìm thấy phim nào phù hợp.
+            </div>
+        }
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        $(document).ready(function () {
+            const searchInput = $('#searchInput');
+            const autocompleteResults = $('#autocompleteResults');
+            const moviesContainer = $('#moviesContainer');
+
+            // Autocomplete function
+            searchInput.on('input', function () {
+                const searchTerm = $(this).val().toLowerCase();
+                
+                if (searchTerm.length < 2) {
+                    autocompleteResults.hide();
+                    return;
+                }
+
+                // Filter movies for autocomplete
+                const suggestions = [];
+                $('.movie-card').each(function () {
+                    const title = $(this).find('.card-title').text().toLowerCase();
+                    if (title.includes(searchTerm)) {
+                        suggestions.push(title);
+                    }
+                });
+
+                // Display autocomplete results
+                if (suggestions.length > 0) {
+                    autocompleteResults.empty();
+                    suggestions.slice(0, 5).forEach(suggestion => {
+                        autocompleteResults.append(
+                            `<div class="autocomplete-item">${suggestion}</div>`
+                        );
+                    });
+                    autocompleteResults.show();
+                } else {
+                    autocompleteResults.hide();
+                }
+            });
+
+            // Handle autocomplete item click
+            autocompleteResults.on('click', '.autocomplete-item', function () {
+                searchInput.val($(this).text());
+                autocompleteResults.hide();
+                $('#searchForm').submit();
+            });
+
+            // Hide autocomplete when clicking outside
+            $(document).on('click', function (e) {
+                if (!$(e.target).closest('#searchInput, #autocompleteResults').length) {
+                    autocompleteResults.hide();
+                }
+            });
+
+            // Real-time search filter
+            searchInput.on('input', function () {
+                const searchTerm = $(this).val().toLowerCase();
+                
+                $('.movie-card').each(function () {
+                    const title = $(this).find('.card-title').text().toLowerCase();
+                    if (title.includes(searchTerm)) {
+                        $(this).closest('.col-md-6').show();
+                    } else {
+                        $(this).closest('.col-md-6').hide();
+                    }
+                });
+            });
+        });
+    </script>
+
+    <style>
+        .autocomplete-results {
+            position: absolute;
+            background: white;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            width: calc(100% - 30px);
+            max-height: 200px;
+            overflow-y: auto;
+            z-index: 1000;
+            display: none;
+        }
+
+        .autocomplete-item {
+            padding: 10px;
+            cursor: pointer;
+            border-bottom: 1px solid #eee;
+        }
+
+        .autocomplete-item:hover {
+            background-color: #f8f9fa;
+        }
+
+        .autocomplete-item:last-child {
+            border-bottom: none;
+        }
+
+        .movie-card {
+            transition: transform 0.2s ease-in-out;
+        }
+
+        .movie-card:hover {
+            transform: translateY(-5px);
+        }
+    </style>
+}

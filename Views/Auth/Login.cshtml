@@ -1,0 +1,60 @@
+﻿@{
+    ViewData["Title"] = "Đăng nhập";
+    var returnUrl = ViewBag.ReturnUrl as string;
+}
+
+<div class="row justify-content-center">
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header bg-primary text-white text-center">
+                <h4 class="mb-0">ĐĂNG NHẬP HỆ THỐNG</h4>
+            </div>
+            <div class="card-body">
+                <p class="text-center">Vui lòng đăng nhập để có thể mua vé xem phim.</p>
+
+                <!-- THÊM: Hiển thị thông báo thành công từ đăng ký -->
+                @if (TempData["Success"] != null)
+                {
+                    <div class="alert alert-success">@TempData["Success"]</div>
+                }
+
+                @if (ViewBag.Error != null)
+                {
+                    <div class="alert alert-danger">@ViewBag.Error</div>
+                }
+
+                <form method="post">
+                    <!-- THÊM: Hidden field để lưu returnUrl -->
+                    @if (!string.IsNullOrEmpty(returnUrl))
+                    {
+                        <input type="hidden" name="returnUrl" value="@returnUrl" />
+                    }
+
+                    <div class="mb-3">
+                        <label class="form-label">Tên đăng nhập</label>
+                        <input type="text" class="form-control" name="username" placeholder="Nhập tên đăng nhập" required>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label">Mật khẩu</label>
+                        <input type="password" class="form-control" name="password" placeholder="Nhập mật khẩu" required>
+                    </div>
+
+                    <div class="d-grid">
+                        <button type="submit" class="btn btn-primary btn-lg">
+                            <i class="fas fa-sign-in-alt"></i> ĐĂNG NHẬP
+                        </button>
+                    </div>
+                </form>
+
+                <div class="text-center mt-3">
+                    <p>Chưa có tài khoản? 
+                        <a asp-controller="Auth" asp-action="Register" class="text-decoration-none">
+                            <strong>Đăng ký ngay</strong>
+                        </a>
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

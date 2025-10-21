@@ -1,0 +1,155 @@
+﻿@model MovieTicketBooking.ViewModels.BookingViewModel
+@{
+    ViewData["Title"] = "Đặt vé - " + Model.MovieTitle;
+    <link rel="stylesheet" href="~/css/styles.css" />
+}
+
+<div class="container mt-4">
+    <h2>Đặt vé</h2>
+
+    <!-- Hiển thị thông báo lỗi tổng hợp -->
+    <div asp-validation-summary="All" class="alert alert-danger"></div>
+
+    <div class="row">
+        <div class="col-md-8">
+            <!-- Thông tin phim -->
+            <div class="card mb-4">
+                <div class="card-header"><h5>Thông tin phim</h5></div>
+                <div class="card-body">
+                    <p><strong>Phim:</strong> @Model.MovieTitle</p>
+                    <p><strong>Thời gian:</strong> @Model.StartTime.ToString("dd/MM/yyyy HH:mm")</p>
+                    <p><strong>Phòng:</strong> @Model.CinemaRoomName</p>
+                    <p><strong>Giá vé:</strong> @Model.MoviePrice.ToString("N0") VNĐ/ghế</p>
+                </div>
+            </div>
+
+            <!-- Giá vé dùng cho script -->
+            <input type="hidden" id="moviePrice" value="@Model.MoviePrice" />
+
+            <!-- Nhập số lượng vé -->
+            <div class="form-group mb-3">
+                <label asp-for="TicketCount" class="form-label"></label>
+                <!-- ⚠️ Bắt buộc thêm id="ticketCount" để JS hoạt động -->
+                <input id="ticketCount" asp-for="TicketCount" type="number" class="form-control" min="1" max="10" value="1" />
+                <span asp-validation-for="TicketCount" class="text-danger"></span>
+            </div>
+
+            <p id="ticketInfo" class="text-primary">
+                Số ghế cần chọn: <span id="neededSeats">1</span> | Đã chọn: <span id="selectedSeats">0</span>
+            </p>
+
+            <p id="totalPrice" class="fw-bold text-success">Tổng tiền: 0 VNĐ</p>
+            <hr />
+
+            <!-- Chọn ghế -->
+            <div class="card mb-4">
+                <div class="card-header"><h5>Chọn ghế</h5></div>
+                <div class="card-body">
+                    <div class="text-center mb-4">
+                        <div class="bg-dark text-white py-2 rounded"><strong>MÀN HÌNH CHÍNH</strong></div>
+                    </div>
+
+                    <div class="seating-chart">
+                        @{
+                            var seatsByRow = Model.AvailableSeats.GroupBy(s => s.Row).OrderBy(g => g.Key);
+                        }
+                        @foreach (var row in seatsByRow)
+                        {
+                            <div class="row mb-2 align-items-center">
+                                <div class="col-1 text-center"><strong>@row.Key</strong></div>
+                                <div class="col-11">
+                                    @foreach (var seat in row.OrderBy(s => s.Number))
+                                    {
+                                        <div class="form-check form-check-inline">
+                                            <input class="form-check-input seat-checkbox"
+                                                   type="checkbox"
+                                                   value="@seat.Id"
+                                                   id="seat-@seat.Id"
+                                                   data-seat-number="@seat.Number"
+                                                   data-row="@seat.Row"
+                                                   @(!seat.IsAvailable ? "disabled" : "")>
+                                            <label class="form-check-label @(seat.IsAvailable ? "text-success" : "text-danger")" for="seat-@seat.Id">@seat.Number</label>
+                                        </div>
+                                    }
+                                </div>
+                            </div>
+                        }
+                    </div>
+
+                    <div class="mt-3">
+                        <small class="text-muted">
+                            <span class="text-success">●</span> Ghế trống
+                            <span class="text-danger ms-2">●</span> Ghế đã đặt
+                        </small>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Thông tin đặt vé -->
+        <div class="col-md-4">
+            <div class="card">
+                <div class="card-header"><h5>Thông tin đặt vé</h5></div>
+                <div class="card-body">
+                    <form asp-action="Create" method="post" id="bookingForm" novalidate>
+                        <input type="hidden" asp-for="ShowtimeId" />
+                        <input type="hidden" asp-for="MoviePrice" />
+                        <input type="hidden" id="SelectedSeatIds" name="SelectedSeatIds" />
+                        <div id="selectedSeatInputs"></div>
+
+                        <div class="mb-3">
+                            <label asp-for="CustomerName" class="form-label"></label>
+                            <input asp-for="CustomerName" class="form-control" />
+                            <span asp-validation-for="CustomerName" class="text-danger"></span>
+                        </div>
+
+                        <div class="mb-3">
+                            <label asp-for="CustomerEmail" class="form-label"></label>
+                            <input asp-for="CustomerEmail" class="form-control" />
+                            <span asp-validation-for="CustomerEmail" class="text-danger"></span>
+                        </div>
+
+                        <div class="mb-3">
+                            <label asp-for="CustomerPhone" class="form-label"></label>
+                            <input asp-for="CustomerPhone" class="form-control" />
+                            <span asp-validation-for="CustomerPhone" class="text-danger"></span>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label">Ghế đã chọn:</label>
+                            <div id="selected-seats-list" class="text-success fw-bold">Chưa chọn ghế</div>
+                            <span class="text-danger" id="seat-error"></span>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label">Số lượng ghế:</label>
+                            <div id="seat-count" class="fw-bold">0</div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label">Tổng tiền:</label>
+                            <div id="total-amount" class="h5 text-primary">0 VNĐ</div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">Phương thức thanh toán:</label>
+                            <select class="form-select" asp-for="PaymentMethod">
+                                <option value="Tại quầy">Tại quầy</option>
+                                <option value="Online">Online (giả lập)</option>
+                            </select>
+                            <span asp-validation-for="PaymentMethod" class="text-danger"></span>
+                        </div>
+
+                        <button type="submit" class="btn btn-primary w-100">Đặt vé</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <!-- ⚠️ Đảm bảo script này load được -->
+    <script src="~/js/booking.js" asp-append-version="true"></script>
+    <partial name="_ValidationScriptsPartial" />
+}
