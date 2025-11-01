@@ -21,7 +21,7 @@ namespace MovieTicketBooking.Data
         {
             base.OnModelCreating(modelBuilder);
 
-            // Cấu hình User
+   
             modelBuilder.Entity<User>()
                 .Property(u => u.Username)
                 .HasMaxLength(50);
@@ -38,7 +38,7 @@ namespace MovieTicketBooking.Data
                 .Property(u => u.FullName)
                 .HasMaxLength(100);
 
-            // Cấu hình precision cho decimal properties
+
             modelBuilder.Entity<Booking>()
                 .Property(b => b.TotalAmount)
                 .HasPrecision(18, 2);
@@ -51,7 +51,7 @@ namespace MovieTicketBooking.Data
                 .Property(m => m.Price)
                 .HasPrecision(18, 2);
 
-            // Cấu hình relationships với NO ACTION để tránh cascade conflict
+
             modelBuilder.Entity<Showtime>()
                 .HasOne(s => s.Movie)
                 .WithMany(m => m.Showtimes)
@@ -82,10 +82,6 @@ namespace MovieTicketBooking.Data
                 .HasForeignKey(bd => bd.BookingId)
                 .OnDelete(DeleteBehavior.NoAction);
 
-            // NOTE: removed mapping between BookingDetail and Seat because BookingDetail now stores SeatNumber (string)
-            // If you prefer to keep FK to Seats, restore relationship and ensure Seats table contains those IDs.
-
-            // Cấu hình string length để tránh nvarchar(max)
             modelBuilder.Entity<CinemaRoom>()
                 .Property(c => c.Name)
                 .HasMaxLength(50);
@@ -134,13 +130,10 @@ namespace MovieTicketBooking.Data
                 .Property(b => b.BookingCode)
                 .HasMaxLength(20);
 
-            // Configure BookingDetail.SeatNumber if exists
-            // (only if your BookingDetail model has SeatNumber property)
             var bookingDetailEntity = modelBuilder.Entity<BookingDetail>();
             if (bookingDetailEntity != null)
             {
-                // if BookingDetail has SeatNumber property, set max length
-                // (this is safe: if property doesn't exist it will be ignored at runtime)
+               
                 bookingDetailEntity
                     .Property<string>("SeatNumber")
                     .HasMaxLength(10)
