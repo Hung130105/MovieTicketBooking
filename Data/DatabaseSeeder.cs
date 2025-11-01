@@ -10,7 +10,6 @@ namespace MovieTicketBooking.Data
             using var scope = app.ApplicationServices.CreateScope();
             var context = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
 
-            // Kiểm tra nếu chưa có dữ liệu phim
             if (!context.Movies.Any())
             {
                 context.Movies.AddRange(
@@ -79,7 +78,6 @@ namespace MovieTicketBooking.Data
                 context.SaveChanges();
             }
 
-            // Thêm CinemaRoom nếu chưa có
             if (!context.CinemaRooms.Any())
             {
                 context.CinemaRooms.AddRange(
@@ -92,7 +90,6 @@ namespace MovieTicketBooking.Data
                 context.SaveChanges();
             }
 
-            // Thêm Showtime cho các phim, đặc biệt là Kung Fu Panda 4
             if (!context.Showtimes.Any())
             {
                 var kungFuPanda = context.Movies.FirstOrDefault(m => m.Title == "Kung Fu Panda 4");
@@ -106,7 +103,6 @@ namespace MovieTicketBooking.Data
                 {
                     var today = DateTime.Today;
 
-                    // Thêm nhiều suất chiếu cho Kung Fu Panda 4 trong ngày hôm nay
                     var kungFuShowtimes = new List<Showtime>
                     {
                         new Showtime
@@ -154,7 +150,6 @@ namespace MovieTicketBooking.Data
                     context.Showtimes.AddRange(kungFuShowtimes);
                 }
 
-                // Thêm showtime cho các phim khác (tuỳ chọn)
                 if (avengers != null && rooms.Any())
                 {
                     var today = DateTime.Today;
