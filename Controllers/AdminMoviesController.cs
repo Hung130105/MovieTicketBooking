@@ -1,4 +1,4 @@
-﻿using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using MovieTicketBooking.Data;
 using MovieTicketBooking.Models;
@@ -16,10 +16,13 @@ namespace MovieTicketBooking.Controllers
             _env = env;
         }
 
-        // GET: AdminMovies
+        // ================= INDEX =================
         public async Task<IActionResult> Index()
         {
-            return View(await _context.Movies.ToListAsync());
+            var movies = await _context.Movies
+                .OrderByDescending(m => m.ReleaseDate)
+                .ToListAsync();
+            return View(movies);
         }
 
         // ================= CREATE =================
@@ -32,15 +35,24 @@ namespace MovieTicketBooking.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Create(Movie movie, IFormFile? PosterFile)
         {
-            if (ModelState.IsValid)
+            try
             {
-                // ✅ Nếu có chọn ảnh thì lưu
+                if (!ModelState.IsValid)
+                {
+                    ViewBag.Error = string.Join("; ", ModelState.Values
+                        .SelectMany(v => v.Errors)
+                        .Select(e => e.ErrorMessage));
+                    return View(movie);
+                }
+
+                // ✅ Upload ảnh
                 if (PosterFile != null && PosterFile.Length > 0)
                 {
-                    var uploadsFolder = Path.Combine(_env.WebRootPath, "images");
-                    Directory.CreateDirectory(uploadsFolder); // đảm bảo có thư mục
-                    var fileName = Guid.NewGuid().ToString() + Path.GetExtension(PosterFile.FileName);
-                    var filePath = Path.Combine(uploadsFolder, fileName);
+                    string uploadFolder = Path.Combine(_env.WebRootPath, "images");
+                    Directory.CreateDirectory(uploadFolder);
+
+                    string fileName = Guid.NewGuid() + Path.GetExtension(PosterFile.FileName);
+                    string filePath = Path.Combine(uploadFolder, fileName);
 
                     using (var stream = new FileStream(filePath, FileMode.Create))
                     {
@@ -50,11 +62,26 @@ namespace MovieTicketBooking.Controllers
                     movie.PosterUrl = fileName;
                 }
 
-                _context.Add(movie);
+                // ✅ Gán mặc định tránh lỗi null
+                movie.Genre = string.IsNullOrWhiteSpace(movie.Genre) ? "Chưa cập nhật" : movie.Genre;
+                movie.Language = string.IsNullOrWhiteSpace(movie.Language) ? "Không rõ" : movie.Language;
+                movie.Director = string.IsNullOrWhiteSpace(movie.Director) ? "Chưa rõ" : movie.Director;
+                movie.Cast = string.IsNullOrWhiteSpace(movie.Cast) ? "Đang cập nhật" : movie.Cast;
+                movie.Duration = movie.Duration <= 0 ? 90 : movie.Duration;
+                if (movie.EndDate == default(DateTime))
+                    movie.EndDate = movie.ReleaseDate.AddMonths(1);
+
+                _context.Movies.Add(movie);
                 await _context.SaveChangesAsync();
+
+                TempData["SuccessMessage"] = "✅ Thêm phim mới thành công!";
                 return RedirectToAction(nameof(Index));
             }
-            return View(movie);
+            catch (Exception ex)
+            {
+                ViewBag.Error = "❌ Lỗi khi thêm phim: " + ex.Message;
+                return View(movie);
+            }
         }
 
         // ================= EDIT =================
@@ -68,52 +95,88 @@ namespace MovieTicketBooking.Controllers
 
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Edit(int id, Movie movie, IFormFile PosterFile)
+        public async Task<IActionResult> Edit(int id, Movie movie, IFormFile? PosterFile)
         {
             if (id != movie.Id)
                 return NotFound();
 
-            if (ModelState.IsValid)
+            try
             {
-                try
+                var existingMovie = await _context.Movies.FindAsync(id);
+                if (existingMovie == null)
+                    return NotFound();
+
+                if (!ModelState.IsValid)
                 {
-                    if (PosterFile != null && PosterFile.Length > 0)
+                    ViewBag.Error = string.Join("; ", ModelState.Values
+                        .SelectMany(v => v.Errors)
+                        .Select(e => e.ErrorMessage));
+                    return View(movie);
+                }
+
+                // ✅ Cập nhật các trường
+                existingMovie.Title = movie.Title;
+                existingMovie.Description = movie.Description;
+                existingMovie.ReleaseDate = movie.ReleaseDate;
+                existingMovie.EndDate = movie.EndDate != default(DateTime)
+                    ? movie.EndDate
+                    : movie.ReleaseDate.AddMonths(1);
+                existingMovie.Duration = movie.Duration > 0 ? movie.Duration : 90;
+                existingMovie.Genre = string.IsNullOrWhiteSpace(movie.Genre) ? "Chưa cập nhật" : movie.Genre;
+                existingMovie.Language = string.IsNullOrWhiteSpace(movie.Language) ? "Không rõ" : movie.Language;
+                existingMovie.Director = string.IsNullOrWhiteSpace(movie.Director) ? "Chưa rõ" : movie.Director;
+                existingMovie.Cast = string.IsNullOrWhiteSpace(movie.Cast) ? "Đang cập nhật" : movie.Cast;
+                existingMovie.Price = movie.Price > 0 ? movie.Price : 50000;
+
+                // ✅ Nếu có ảnh mới thì cập nhật
+                if (PosterFile != null && PosterFile.Length > 0)
+                {
+                    string uploadFolder = Path.Combine(_env.WebRootPath, "images");
+                    Directory.CreateDirectory(uploadFolder);
+
+                    string fileName = Guid.NewGuid() + Path.GetExtension(PosterFile.FileName);
+                    string filePath = Path.Combine(uploadFolder, fileName);
+
+                    using (var stream = new FileStream(filePath, FileMode.Create))
                     {
-                        string uploadsFolder = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot/images");
-                        string uniqueFileName = Guid.NewGuid().ToString() + Path.GetExtension(PosterFile.FileName);
-                        string filePath = Path.Combine(uploadsFolder, uniqueFileName);
-
-                        using (var fileStream = new FileStream(filePath, FileMode.Create))
-                        {
-                            await PosterFile.CopyToAsync(fileStream);
-                        }
-
-                        movie.PosterUrl = uniqueFileName;
+                        await PosterFile.CopyToAsync(stream);
                     }
 
-                    _context.Update(movie);
-                    await _context.SaveChangesAsync();
-                    TempData["SuccessMessage"] = "Cập nhật phim thành công!";
-                    return RedirectToAction(nameof(Index));
+                    existingMovie.PosterUrl = fileName;
                 }
-                catch
-                {
-                    TempData["ErrorMessage"] = "Lỗi khi cập nhật phim.";
-                }
+
+                _context.Update(existingMovie);
+                await _context.SaveChangesAsync();
+
+                TempData["SuccessMessage"] = "✅ Cập nhật phim thành công!";
+                return RedirectToAction(nameof(Index));
             }
-            return View(movie);
+            catch (Exception ex)
+            {
+                ViewBag.Error = "❌ Lỗi khi cập nhật phim: " + ex.Message;
+                return View(movie);
+            }
         }
 
         // ================= DELETE =================
         [HttpPost]
         public async Task<IActionResult> Delete(int id)
         {
-            var movie = await _context.Movies.FindAsync(id);
-            if (movie != null)
+            try
             {
-                _context.Movies.Remove(movie);
-                await _context.SaveChangesAsync();
+                var movie = await _context.Movies.FindAsync(id);
+                if (movie != null)
+                {
+                    _context.Movies.Remove(movie);
+                    await _context.SaveChangesAsync();
+                    TempData["SuccessMessage"] = "🗑️ Xóa phim thành công!";
+                }
             }
+            catch (Exception ex)
+            {
+                TempData["ErrorMessage"] = "❌ Lỗi khi xóa phim: " + ex.Message;
+            }
+
             return RedirectToAction(nameof(Index));
         }
     }
