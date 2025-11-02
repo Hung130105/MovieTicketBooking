@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="vi">
 <head>
     <meta charset="utf-8" />
@@ -13,6 +13,9 @@
 
     <!-- Custom CSS -->
     <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
+
+    <!-- 🔥 Cho phép view thêm CSS riêng -->
+    @RenderSection("Styles", required: false)
 </head>
 <body>
     <header>
@@ -23,7 +26,11 @@
                     <i class="fas fa-film"></i> MovieTicketBooking
                 </a>
 
-                <div class="collapse navbar-collapse">
+                <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                    <span class="navbar-toggler-icon"></span>
+                </button>
+
+                <div class="collapse navbar-collapse" id="navbarNav">
                     <ul class="navbar-nav me-auto">
                         <li class="nav-item">
                             <a class="nav-link" asp-controller="Movies" asp-action="Index">
@@ -48,7 +55,9 @@
                             </li>
 
                             <li class="nav-item">
-                                <a class="nav-link" href="/Bookings/MyBookings">Lịch sử vé</a>
+                                <a class="nav-link" href="/Bookings/MyBookings">
+                                    <i class="fas fa-ticket-alt"></i> Lịch sử vé
+                                </a>
                             </li>
 
                             @if (Context.Session.GetString("Role") == "Admin")
@@ -92,7 +101,7 @@
 
     <footer class="bg-dark text-light mt-5 py-4">
         <div class="container text-center">
-            <p>&copy; 2025 - MovieTicketBooking</p>
+            <p>&copy; 2025 - MovieTicketBooking | <i class="fas fa-film"></i> Rạp chiếu phim trực tuyến</p>
         </div>
     </footer>
 
