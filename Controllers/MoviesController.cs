@@ -68,11 +68,64 @@ namespace MovieTicketBooking.Controllers
         // ================== CHI TIẾT PHIM ==================
         public async Task<IActionResult> Details(int id)
         {
-            var movie = await _context.Movies.FindAsync(id);
+            var movie = await _context.Movies
+                .Include(m => m.Showtimes)
+                .ThenInclude(s => s.CinemaRoom)
+                .FirstOrDefaultAsync(m => m.Id == id);
+
             if (movie == null)
-            {
                 return NotFound();
+
+            var showtimes = await _context.Showtimes
+                .Include(s => s.CinemaRoom)
+                .Where(s => s.MovieId == id && s.IsActive && s.StartTime >= DateTime.Now)
+                .OrderBy(s => s.StartTime)
+                .ToListAsync();
+
+            if (!showtimes.Any())
+            {
+                var defaultRoom = await _context.CinemaRooms.FirstOrDefaultAsync();
+                if (defaultRoom == null)
+                {
+                    defaultRoom = new CinemaRoom
+                    {
+                        Name = "Phòng 1",
+                        Capacity = 100,
+                        IsActive = true
+                    };
+                    _context.CinemaRooms.Add(defaultRoom);
+                    await _context.SaveChangesAsync();
+                }
+
+                var generatedShowtimes = new List<Showtime>();
+                for (int i = 0; i < 3; i++)
+                {
+                    var start = DateTime.Today.AddDays(i).AddHours(19);
+                    generatedShowtimes.Add(new Showtime
+                    {
+                        MovieId = movie.Id,
+                        CinemaRoomId = defaultRoom.Id,
+                        StartTime = start,
+                        EndTime = start.AddHours(2),
+                        IsActive = true
+                    });
+                }
+
+                _context.Showtimes.AddRange(generatedShowtimes);
+                await _context.SaveChangesAsync();
+
+                showtimes = generatedShowtimes;
             }
+
+            var availableDates = showtimes
+                .Select(s => s.StartTime.Date)
+                .Distinct()
+                .OrderBy(d => d)
+                .ToList();
+
+            ViewBag.Showtimes = showtimes;
+            ViewBag.AvailableDates = availableDates;
+
             return View(movie);
         }
     }
